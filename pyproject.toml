@@ -23,6 +23,10 @@ dependencies = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
 [project.urls]
 Homepage = "https://github.com/maclariz/Kelvin_STEM/"
 Issues = "https://github.com/maclariz/Kelvin_STEM/issues"
