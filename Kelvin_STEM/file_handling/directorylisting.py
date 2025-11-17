@@ -1,16 +1,22 @@
 import os, fnmatch
+"""
+creates simple tools for file handling using existing repositories
+"""
 
-# gives you the list of files fitting some spec in
-# your working directory
-def file_list(path, searchterm = False):
-# path is a normal path, ending with a /
-# searchterm is False for no specific term, or a text string you want to find in the filenames to be listed, which will need to include wildcards
+def file_list(path, searchterm = "*"):
+    """
+    Parameters
+    ----------
+    path: str
+        A valid path for your system, best ended with "/"
+    searchterm: str
+        A text string you want to find in the filenames to be listed, which will need 
+        to include wildcards if you are listing multiple files (e.g. *STEM*.h5)
+
+    """
     files = []
     paths = os.listdir(path)
-    if searchterm == False:
-        files = paths
-        return sorted(files)
-    elif isinstance(searchterm, str):
+    if isinstance(searchterm, str):
         for file in paths:
             if fnmatch.fnmatch(file, searchterm): 
                 #taking only files in data set that are using hdf5
@@ -18,4 +24,4 @@ def file_list(path, searchterm = False):
         return sorted(files)
     else:
         print('Error: use a text string as search term!')
-        return
+        pass
