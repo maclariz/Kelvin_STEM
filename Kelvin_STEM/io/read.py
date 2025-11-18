@@ -44,9 +44,12 @@ def read_mib_to_np(
 	"""
     
     # set bit depth parameters
-    if bit_depth==12: data_type, b = np.uint16, 2
-    elif bit_depth==6: data_type, b = np.uint8, 1
-    elif bit_depth==1: data_type, b = np.uint8, 1
+    if bit_depth==12: 
+    	data_type, b = np.uint16, 2
+    elif bit_depth==6: 
+    	data_type, b = np.uint8, 1
+    elif bit_depth==1: 
+    	data_type, b = np.uint8, 1
     else: raise Exception("Incorrect data type selected, please enter 12, 6 or 1")
 
 
