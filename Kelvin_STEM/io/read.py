@@ -67,6 +67,7 @@ def read_mib_to_np(
         data = np.memmap(filepath, frametype, mode="r", shape=(xdim, ydim + flybackpix))
     except ValueError:
         # If the datafile didn't finish the full scan, we can still read what was there
+        file_size = os.path.getsize(filepath)
         xdim = int(file_size / ((ydim + 1) * (kx * ky * b + header + footer)))
         frametype = np.dtype(
             [
