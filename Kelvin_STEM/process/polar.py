@@ -1,4 +1,6 @@
 import numpy as np
+from emdfile import tqdmnd
+
 
 """
 This module provides functions for rapid cartesian-polar transformations of either a single image or a 4D dataset
@@ -81,16 +83,22 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
 
     Returns
     -------
-    meshgrids: np.ndarray
+    PTDP: np.ndarray
         datatype is float
         Dimensions:
-        0: 0 gives the array for i positions, 1 gives the array for j positions
-        1: gives the radial array
-        2: gives the azimuth array
-
+        0: the radial direction
+        1: the azimuthal direction (starting horizontal right and proceeding ACW)
+    
+    !!! Needs warning to stop it failing if rmax set too high !!!
 
     """
-
+    if ci+rmax >= DP.shape[0]:
+        rmax = DP.shape[0]-ci-1
+        print('rmax adjusted to '+rmax+'as currently set bigger than the image')
+    if cj+rmax >= DP.shape[1]:
+        rmax = DP.shape[1]-cj-1
+    print('rmax adjusted to '+rmax+'as currently set bigger than the image')
+    
     disc = discfloat(
         ci, cj, rmin, rmax, segments
     )  # get basic disc of all transform positions
@@ -134,3 +142,71 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
     PTDP = pt * rweighting
 
     return PTDP
+
+def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
+    '''
+    This is a function to polar transform the Q dimensions of a 4DSTEM dataset only covering a limited
+    radial range
+    Parameters
+    ----------
+
+    dataset: np.ndarray
+        the 4DSTEM dataset to be transformed (must be 4D, Rx, Ry, Qx, Qy)
+    ci: int, float
+        the centre position in the cartesian array along axis 0 in pixels
+    cj: int, float
+        the centre position in the cartesian array along axis 1 in pixels
+    rmin: int
+        the minimum radius desired in the polar transform dataset in pixels
+    rmax: int
+        the maximum radius desired in the polar transform dataset in pixels
+    segments: int
+        the number of angular segments in the transformed dataset
+        Advisable to use  an appropriate number of segments to approximately match 2*pi*r at
+        the largest radius of interest in your analysis to get a good sampling of the
+        original data in your transform
+    simple: bool
+        True: just calculates intensity from nearest pixel to every cartesian grid reference
+        from the polar (r,phi) grid
+        False: calculates a weighted average of the four nearest pixels to that grid reference
+        (slower but more robust to single pixel glitches)
+
+    Returns
+    -------
+    PTDP: np.ndarray
+        datatype is float
+        Dimensions:
+        0: Rx
+        1: Ry
+        2: the radial direction
+        3: the azimuthal direction (starting horizontal right and proceeding ACW)
+    
+    !!! Needs warning to stop it failing if rmax set too high !!!
+   
+    Ri, Rj = dataset.shape[0], dataset.shape[1]
+    PT4D = np.zeros(shape=(Ri,Rj,rmax-rmin,segments))
+
+    # version of calculation for a single value for pattern centre
+    if isinstance(ci, int):
+        for i, j in tqdmnd(Ri, Rj):
+            PT4D[i,j,:,:] = polarttransform(
+                dataset[i,j,:,:], 
+                ci, cj, 
+                rmin, rmax, 
+                segments, 
+                simple=simple
+            )
+        return PT4D
+
+    # version of calculation for an array of pattern centres
+    elif isinstance(ci, np.ndarray):
+        assert ci.shape[0]==Ri and cj.shape[1]==Rj, 'The array size for the pattern centres does not match the dataset'
+        for i, j in tqdmnd(Ri, Rj):
+                PT4D[i,j,:,:] = polarttransform(
+                    dataset[i,j,:,:], 
+                    ci[i,j], cj[i,j], 
+                    rmin, rmax, 
+                    segments, 
+                    simple=simple
+                )
+        return PT4D
