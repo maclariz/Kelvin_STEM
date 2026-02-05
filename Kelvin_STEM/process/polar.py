@@ -182,6 +182,7 @@ def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
         3: the azimuthal direction (starting horizontal right and proceeding ACW)
     
     !!! Needs warning to stop it failing if rmax set too high !!!
+    '''
    
     Ri, Rj = dataset.shape[0], dataset.shape[1]
     PT4D = np.zeros(shape=(Ri,Rj,rmax-rmin,segments))
