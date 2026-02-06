@@ -1,5 +1,7 @@
 import numpy as np
 from emdfile import tqdmnd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 
 """
@@ -94,7 +96,9 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
     """
     if ci + rmax >= DP.shape[0]:
         rmax = DP.shape[0] - ci - 1
-        print("rmax adjusted to " + str(rmax) + "as currently set bigger than the image")
+        print(
+            "rmax adjusted to " + str(rmax) + "as currently set bigger than the image"
+        )
     if cj + rmax >= DP.shape[1]:
         rmax = DP.shape[1] - cj - 1
     print("rmax adjusted to " + str(rmax) + "as currently set bigger than the image")
@@ -212,3 +216,47 @@ def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
                 simple=simple,
             )
         return PT4D
+
+
+def plotpolar(polar, rmin, rmax, lines, title):
+    """
+    A convenience plotting function for plotting polar transformed data with labelled axes and lines delineating
+    features such as HOLZ rings
+
+    Parameters
+    ----------
+    polar: np.ndarray
+        a single polar transformed diffraction pattern (2D array)
+    rmin: int
+        minimum radius of the transform in pixels
+    rmax: int
+        maximum radius of the transform in pixels
+    lines: list
+        a set of five line positions to delineate the Laue zone,
+        between 2 and 3 is used as standard in defining the HOLZ ring
+    title: str
+        any chosen title for the plot
+
+    Returns
+    -------
+    None
+    """
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.imshow(
+        polar,
+        vmin=np.percentile(polar, 5),
+        vmax=np.percentile(polar, 98),
+        cmap="turbo",
+        extent=[0, 360, rmax, rmin],
+        aspect=3,
+    )
+    ax.set_xlabel(r"$\phi,$ deg")
+    ax.set_ylabel("radius, pixels")
+    ax.yaxis.set_minor_locator(MultipleLocator(5))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+    ax.xaxis.set_major_locator(MultipleLocator(60))
+
+    ax.hlines(
+        lines + rmin, 0, 359, color=["m", "k", "w", "w", "m"]
+    )  # adding lines to mark out position of HOLZ ring
+    ax.set_title(title)
