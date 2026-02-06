@@ -1,6 +1,6 @@
 [project]
 name = "Kelvin_STEM"
-version = "0.0.7"
+version = "0.0.8"
 authors = [
   { name="Ian MacLaren", email="ian.maclaren@glasgow.ac.uk" },
 ]
