@@ -94,10 +94,10 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
     """
     if ci + rmax >= DP.shape[0]:
         rmax = DP.shape[0] - ci - 1
-        print("rmax adjusted to " + rmax + "as currently set bigger than the image")
+        print("rmax adjusted to " + str(rmax) + "as currently set bigger than the image")
     if cj + rmax >= DP.shape[1]:
         rmax = DP.shape[1] - cj - 1
-    print("rmax adjusted to " + rmax + "as currently set bigger than the image")
+    print("rmax adjusted to " + str(rmax) + "as currently set bigger than the image")
 
     disc = discfloat(
         ci, cj, rmin, rmax, segments
