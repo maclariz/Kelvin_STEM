@@ -88,17 +88,17 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
         Dimensions:
         0: the radial direction
         1: the azimuthal direction (starting horizontal right and proceeding ACW)
-    
+
     !!! Needs warning to stop it failing if rmax set too high !!!
 
     """
-    if ci+rmax >= DP.shape[0]:
-        rmax = DP.shape[0]-ci-1
-        print('rmax adjusted to '+rmax+'as currently set bigger than the image')
-    if cj+rmax >= DP.shape[1]:
-        rmax = DP.shape[1]-cj-1
-    print('rmax adjusted to '+rmax+'as currently set bigger than the image')
-    
+    if ci + rmax >= DP.shape[0]:
+        rmax = DP.shape[0] - ci - 1
+        print("rmax adjusted to " + rmax + "as currently set bigger than the image")
+    if cj + rmax >= DP.shape[1]:
+        rmax = DP.shape[1] - cj - 1
+    print("rmax adjusted to " + rmax + "as currently set bigger than the image")
+
     disc = discfloat(
         ci, cj, rmin, rmax, segments
     )  # get basic disc of all transform positions
@@ -143,8 +143,9 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
 
     return PTDP
 
+
 def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
-    '''
+    """
     This is a function to polar transform the Q dimensions of a 4DSTEM dataset only covering a limited
     radial range
     Parameters
@@ -180,34 +181,34 @@ def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
         1: Ry
         2: the radial direction
         3: the azimuthal direction (starting horizontal right and proceeding ACW)
-    
+
     !!! Needs warning to stop it failing if rmax set too high !!!
-    '''
-   
+    """
+
     Ri, Rj = dataset.shape[0], dataset.shape[1]
-    PT4D = np.zeros(shape=(Ri,Rj,rmax-rmin,segments))
+    PT4D = np.zeros(shape=(Ri, Rj, rmax - rmin, segments))
 
     # version of calculation for a single value for pattern centre
     if isinstance(ci, int):
         for i, j in tqdmnd(Ri, Rj):
-            PT4D[i,j,:,:] = polarttransform(
-                dataset[i,j,:,:], 
-                ci, cj, 
-                rmin, rmax, 
-                segments, 
-                simple=simple
+            PT4D[i, j, :, :] = polarttransform(
+                dataset[i, j, :, :], ci, cj, rmin, rmax, segments, simple=simple
             )
         return PT4D
 
     # version of calculation for an array of pattern centres
     elif isinstance(ci, np.ndarray):
-        assert ci.shape[0]==Ri and cj.shape[1]==Rj, 'The array size for the pattern centres does not match the dataset'
+        assert (
+            ci.shape[0] == Ri and cj.shape[1] == Rj
+        ), "The array size for the pattern centres does not match the dataset"
         for i, j in tqdmnd(Ri, Rj):
-                PT4D[i,j,:,:] = polarttransform(
-                    dataset[i,j,:,:], 
-                    ci[i,j], cj[i,j], 
-                    rmin, rmax, 
-                    segments, 
-                    simple=simple
-                )
+            PT4D[i, j, :, :] = polarttransform(
+                dataset[i, j, :, :],
+                ci[i, j],
+                cj[i, j],
+                rmin,
+                rmax,
+                segments,
+                simple=simple,
+            )
         return PT4D
