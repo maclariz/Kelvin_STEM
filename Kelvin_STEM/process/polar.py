@@ -320,7 +320,7 @@ def plotpolar(polarDP, Qrmin, Qrmax, lines, title):
     ax.xaxis.set_major_locator(MultipleLocator(60))
 
     ax.hlines(
-        lines + rmin, 0, 359, color=["m", "k", "w", "w", "m"]
+        lines + Qrmin, 0, 359, color=["m", "k", "w", "w", "m"]
     )  # adding lines to mark out position of HOLZ ring
     ax.set_title(title)
 
