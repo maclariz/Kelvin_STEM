@@ -2,14 +2,16 @@ import numpy as np
 from emdfile import tqdmnd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+from scipy.optimize import curve_fit
 
 
 """
 This module provides functions for rapid cartesian-polar transformations of either a single image or a 4D dataset
+and fitting of simple periodic functions to the polar transformed data
 """
 
 
-def discfloat(ci, cj, rmin, rmax, segments):
+def discfloat(ci, cj, Qrmin, Qrmax, segments):
     """
     This is a backend function for the other functions below which generates
     a meshgrid of values corresponding to a regular array r and phi values back
@@ -29,9 +31,9 @@ def discfloat(ci, cj, rmin, rmax, segments):
         the centre position in the cartesian array along axis 0 in pixels
     cj: int, float
         the centre position in the cartesian array along axis 1 in pixels
-    rmin: int
+    Qrmin: int
         the minimum radius desired in the polar transform dataset in pixels
-    rmax: int
+    Qrmax: int
         the maximum radius desired in the polar transform dataset in pixels
     segments: int
         the number of angular segments in the transformed dataset (360 might be
@@ -42,24 +44,57 @@ def discfloat(ci, cj, rmin, rmax, segments):
     meshgrids: np.ndarray
         datatype is float
         Dimensions:
-        0: 0 gives the array for i positions, 1 gives the array for j positions
-        1: gives the radial array
-        2: gives the azimuth array
+        0: 0 gives the meshgrid array for Qi positions, 1 gives the meshgrid array for Qj positions
+        1: gives the Qr array
+        2: gives the Qphi array
 
     """
-    phi = np.arange(0, 2 * np.pi, 2 * np.pi / segments)
-    r = np.arange(rmin, rmax)
-    r_phi_mesh = np.meshgrid(r, phi)
-    i = -r_phi_mesh[0] * np.sin(r_phi_mesh[1]) + ci
-    j = r_phi_mesh[0] * np.cos(r_phi_mesh[1]) + cj
-    meshgrids = np.array([i, j])
+    Qphi = np.arange(0, 2 * np.pi, 2 * np.pi / segments)
+    Qr = np.arange(Qrmin, Qrmax)
+    r_phi_mesh = np.meshgrid(Qr, Qphi)
+    Qi = -r_phi_mesh[0] * np.sin(r_phi_mesh[1]) + ci
+    Qj = r_phi_mesh[0] * np.cos(r_phi_mesh[1]) + cj
+    meshgrids = np.array([Qi, Qj])
     return meshgrids
 
 
-def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
+def Qrmax_test_adjust(Qrmax, Qshape, ci, cj):
+    if ci + Qrmax < Qshape[0] and ci - Qrmax >= 0:
+        pass
+    elif ci + Qrmax >= Qshape[0]:
+        Qrmax = Qshape[0] - ci - 1
+        print(
+            "Qrmax adjusted to "
+            + str(Qrmax)
+            + " as currently set bigger than the image"
+        )
+    elif ci - Qrmax < 0:
+        Qrmax = ci
+        print(
+            "Qrmax adjusted to "
+            + str(Qrmax)
+            + " as currently set bigger than the image"
+        )
+    if cj + Qrmax < Qshape[1] and cj - Qrmax >= 0:
+        pass
+    elif cj + Qrmax >= Qshape[1]:
+        Qrmax = DP.shape[1] - cj - 1
+        print(
+            "rmax adjusted to " + str(Qrmax) + " as currently set bigger than the image"
+        )
+    elif cj - Qrmax < Qshape[1]:
+        Qrmax = cj
+        print(
+            "rmax adjusted to " + str(Qrmax) + " as currently set bigger than the image"
+        )
+    return Qrmax
+
+
+def polarttransform(DP, ci, cj, Qrmin, Qrmax, segments, simple=True):
     """
-    This is a function to polar transform a single diffraction pattern only covering a limited
-    radial range
+    This is a function to polar transform a single diffraction pattern in a defined
+    radial range and is the base function that does the calculations, which is then called
+    by the functions for a DP or a 4DSTEM dataset
     Parameters
     ----------
     DP: np.ndarray
@@ -68,9 +103,9 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
         the centre position in the cartesian array along axis 0 in pixels
     cj: int, float
         the centre position in the cartesian array along axis 1 in pixels
-    rmin: int
+    Qrmin: int
         the minimum radius desired in the polar transform dataset in pixels
-    rmax: int
+    Qrmax: int
         the maximum radius desired in the polar transform dataset in pixels
     segments: int
         the number of angular segments in the transformed dataset
@@ -85,26 +120,14 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
 
     Returns
     -------
-    PTDP: np.ndarray
+    PT: np.ndarray
         datatype is float
         Dimensions:
-        0: the radial direction
-        1: the azimuthal direction (starting horizontal right and proceeding ACW)
-
-    !!! Needs warning to stop it failing if rmax set too high !!!
-
+        0: Qr (radial)
+        1: Qphi (azimuthal starting horizontal right and proceeding ACW)
     """
-    if ci + rmax >= DP.shape[0]:
-        rmax = DP.shape[0] - ci - 1
-        print(
-            "rmax adjusted to " + str(rmax) + "as currently set bigger than the image"
-        )
-    if cj + rmax >= DP.shape[1]:
-        rmax = DP.shape[1] - cj - 1
-    print("rmax adjusted to " + str(rmax) + "as currently set bigger than the image")
-
     disc = discfloat(
-        ci, cj, rmin, rmax, segments
+        ci, cj, Qrmin, Qrmax, segments
     )  # get basic disc of all transform positions
 
     if simple:
@@ -140,30 +163,30 @@ def polarttransform(DP, ci, cj, rmin, rmax, segments, simple=True):
         )
 
     # Now weight result by pixel area in transform image
-    radweight = np.arange(rmin, rmax) * 2 * np.pi / segments
+    radweight = np.arange(Qrmin, Qrmax) * 2 * np.pi / segments
     azi = np.ones(shape=(segments))
     rweighting = np.meshgrid(azi, radweight)[1]
-    PTDP = pt * rweighting
+    PT = pt * rweighting
 
-    return PTDP
+    return PT
 
 
-def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
+def PTDP(DP, ci, cj, Qrmin, Qrmax, segments, simple=True):
     """
-    This is a function to polar transform the Q dimensions of a 4DSTEM dataset only covering a limited
-    radial range
+    This is a function to polar transform a single diffraction pattern in a defined
+    radial range and is the function to call from a notebook, as it checks and
+    adjusts (if required) the maximum radius used in the calculation before running
     Parameters
     ----------
-
-    dataset: np.ndarray
-        the 4DSTEM dataset to be transformed (must be 4D, Rx, Ry, Qx, Qy)
+    DP: np.ndarray
+        the diffraction pattern to be transformed (must be 2D)
     ci: int, float
         the centre position in the cartesian array along axis 0 in pixels
     cj: int, float
         the centre position in the cartesian array along axis 1 in pixels
-    rmin: int
+    Qrmin: int
         the minimum radius desired in the polar transform dataset in pixels
-    rmax: int
+    Qrmax: int
         the maximum radius desired in the polar transform dataset in pixels
     segments: int
         the number of angular segments in the transformed dataset
@@ -181,55 +204,95 @@ def PT4Dinone(dataset, ci, cj, rmin, rmax, segments, simple=True):
     PTDP: np.ndarray
         datatype is float
         Dimensions:
-        0: Rx
-        1: Ry
-        2: the radial direction
-        3: the azimuthal direction (starting horizontal right and proceeding ACW)
+        0: Qr (radial)
+        1: Qphi (azimuthal starting horizontal right and proceeding ACW)
+    """
+    Qrmax = Qrmax_test_adjust(Qrmax, DP.shape, ci, cj)
+    PTDP = polarttransform(DP, ci, cj, Qrmin, Qrmax, segments, simple)
+    return PTDP
 
-    !!! Needs warning to stop it failing if rmax set too high !!!
+
+def PT4D(dataset, ci, cj, Qrmin, Qrmax, segments, simple=True):
+    """
+    This is a function to polar transform the Q dimensions of a 4DSTEM dataset only covering a limited
+    radial range
+    Parameters
+    ----------
+
+    dataset: np.ndarray
+        the 4DSTEM dataset to be transformed (must be 4D, Ri, Rj, Qi, Qj)
+    ci: int, float
+        the centre position in the cartesian array along axis 0 in pixels
+    cj: int, float
+        the centre position in the cartesian array along axis 1 in pixels
+    Qrmin: int
+        the minimum radius desired in the polar transform dataset in pixels
+    Qrmax: int
+        the maximum radius desired in the polar transform dataset in pixels
+    segments: int
+        the number of angular segments in the transformed dataset
+        Advisable to use  an appropriate number of segments to approximately match 2*pi*r at
+        the largest radius of interest in your analysis to get a good sampling of the
+        original data in your transform
+    simple: bool
+        True: just calculates intensity from nearest pixel to every cartesian grid reference
+        from the polar (r,phi) grid
+        False: calculates a weighted average of the four nearest pixels to that grid reference
+        (slower but more robust to single pixel glitches)
+
+    Returns
+    -------
+    PTDP: np.ndarray
+        datatype is float
+        Dimensions:
+        0: Ri (vertical)
+        1: Rj (horizontal)
+        2: Qr (radial)
+        3: Qphi (azimuthal, starting horizontal right and proceeding ACW)
+
     """
 
-    Ri, Rj = dataset.shape[0], dataset.shape[1]
-    PT4D = np.zeros(shape=(Ri, Rj, rmax - rmin, segments))
+    Ri_max, Rj_max = dataset.shape[0], dataset.shape[1]
+    Qrmax = Qrmax_test_adjust(Qrmax, (dataset.shape[2], dataset.shape[3]), ci, cj)
+    PT4D = np.zeros(shape=(Ri_max, Rj_max, Qrmax - Qrmin, segments))
 
     # version of calculation for a single value for pattern centre
     if isinstance(ci, int):
-        for i, j in tqdmnd(Ri, Rj):
-            PT4D[i, j, :, :] = polarttransform(
-                dataset[i, j, :, :], ci, cj, rmin, rmax, segments, simple=simple
+        for Ri, Rj in tqdmnd(Ri_max, Rj_max):
+            PT4D[Ri, Rj, :, :] = polarttransform(
+                dataset[Ri, Rj, :, :], ci, cj, Qrmin, Qrmax, segments, simple=simple
             )
-        return PT4D
 
     # version of calculation for an array of pattern centres
     elif isinstance(ci, np.ndarray):
         assert (
-            ci.shape[0] == Ri and cj.shape[1] == Rj
+            ci.shape[0] == Ri_max and cj.shape[1] == Rj_max
         ), "The array size for the pattern centres does not match the dataset"
-        for i, j in tqdmnd(Ri, Rj):
-            PT4D[i, j, :, :] = polarttransform(
-                dataset[i, j, :, :],
-                ci[i, j],
-                cj[i, j],
-                rmin,
-                rmax,
+        for Ri, Rj in tqdmnd(Ri_max, Rj_max):
+            PT4D[Ri, Rj, :, :] = polarttransform(
+                dataset[Ri, Rj, :, :],
+                ci[Ri, Rj],
+                cj[Ri, Rj],
+                Qrmin,
+                Qrmax,
                 segments,
                 simple=simple,
             )
-        return PT4D
+    return PT4D
 
 
-def plotpolar(polar, rmin, rmax, lines, title):
+def plotpolar(polarDP, Qrmin, Qrmax, lines, title):
     """
     A convenience plotting function for plotting polar transformed data with labelled axes and lines delineating
     features such as HOLZ rings
 
     Parameters
     ----------
-    polar: np.ndarray
+    polarDP: np.ndarray
         a single polar transformed diffraction pattern (2D array)
-    rmin: int
+    Qrmin: int
         minimum radius of the transform in pixels
-    rmax: int
+    Qrmax: int
         maximum radius of the transform in pixels
     lines: list
         a set of five line positions to delineate the Laue zone,
@@ -243,11 +306,11 @@ def plotpolar(polar, rmin, rmax, lines, title):
     """
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.imshow(
-        polar,
-        vmin=np.percentile(polar, 5),
-        vmax=np.percentile(polar, 98),
+        polarDP,
+        vmin=np.percentile(polarDP, 5),
+        vmax=np.percentile(polarDP, 98),
         cmap="turbo",
-        extent=[0, 360, rmax, rmin],
+        extent=[0, 360, Qrmax, Qrmin],
         aspect=3,
     )
     ax.set_xlabel(r"$\phi,$ deg")
@@ -260,3 +323,92 @@ def plotpolar(polar, rmin, rmax, lines, title):
         lines + rmin, 0, 359, color=["m", "k", "w", "w", "m"]
     )  # adding lines to mark out position of HOLZ ring
     ax.set_title(title)
+
+
+def fun_cos_sq(phi, A2, phi2, A1, phi1, B):
+    """
+    Simple function for fitting azimuthal data as a sum of one-fold (cos) and two-fold (cos2) functions
+    according to
+    f = A2 cos^2(phi-phi2) + A1 cos(phi-phi1) + B
+
+    Parameters
+    ----------
+    phi: float
+        angle in radians
+    A2: float
+        amplitude of the 2-fold function
+    phi2: float
+        angular shift of the 2-fold function
+    A1: float
+        amplitude of the 1-fold function
+    phi1: angular shift of the 1-fold function
+    B: float
+        baseline offset of the whole function from zero
+
+    Returns
+    -------
+    f: float
+        as defined above
+
+    """
+    return (
+        A2 * np.cos(np.radians(phi - phi2)) ** 2
+        + A1 * np.cos(np.radians(phi - phi1))
+        + B
+    )
+
+
+def fitIntensity(
+    func,
+    data,
+    p0=[2000, 90, 2000, 0, 1000],
+    bounds=([0, 0, 0, -180, 0], [np.inf, 180, np.inf, 180, np.inf]),
+):
+    """
+    fit HOLZ ring intensity to a periodic function using scipy.optimize.curve_fit
+    documentation for that function at:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
+
+    Parameters
+    ----------
+
+    func: function
+        periodic function to fit data to
+    data: np.ndarray
+        3D numpy array of intensity values corresponding to each detector pixel
+        dim 0: Ri (real space vertical, down)
+        dim 1: Rj (real space horizontal, right)
+        dim 2: Rphi segments, (azimuthal angle from 0-360)
+    p0: list, array, tuple
+        length 5 list of initial values for use by curve_fit
+    bounds: tuple
+        tuple of two length 5 lists of parameters for the lower and upper bounds
+        of the optimization
+        typically, the amplitudes should simply be positive numbers
+        the range over which the angle shifts should be defined depends on the dataset
+        (e.g. a function with a peak angle close to 0 degrees is best defined with 0 in
+        the middle of the angular range)
+        whatever the exact choice of limits, the 2-fold function should be constrained
+        in a 180 degree range and the 1-fold function in a 360 degree range
+
+    Returns
+    -------
+    fitParams : np.ndarray
+        3D numpy array of fit parameters
+            Ri
+            Rj
+            [A2, phi2, A1, phi1, B]
+
+    fitCov: 4D numpy array with covariance matrix of fitted parameters
+    """
+    Ri_max, Rj_max, segments = data.shape
+    fitParams = np.zeros((Ri_max, Ri_max, 5))
+    fitCov = np.zeros((Ri_max, Ri_max, 5, 5))
+
+    for Ri, Rj in tqdmnd(Ri_max, Rj_max):
+        pop, pcov = curve_fit(
+            fun_cos_sq, np.arange(segments), data[Ri, Rj], p0=p0, bounds=bounds
+        )
+        fitParams[Ri, Rj] = pop
+        fitCov[Ri, Rj] = pcov
+    return fitParams, fitCov
