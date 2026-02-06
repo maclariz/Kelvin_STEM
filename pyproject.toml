@@ -1,10 +1,10 @@
 [project]
 name = "Kelvin_STEM"
-version = "0.0.9"
+version = "0.0.10"
 authors = [
   { name="Ian MacLaren", email="ian.maclaren@glasgow.ac.uk" },
 ]
-description = "A small example package"
+description = "Processing tools for 4DSTEM data"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [

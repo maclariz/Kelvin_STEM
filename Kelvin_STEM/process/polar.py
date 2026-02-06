@@ -359,8 +359,8 @@ def fun_cos_sq(phi, A2, phi2, A1, phi1, B):
 
 
 def fitIntensity(
-    func,
     data,
+    func=fun_cos_sq,
     p0=[2000, 90, 2000, 0, 1000],
     bounds=([0, 0, 0, -180, 0], [np.inf, 180, np.inf, 180, np.inf]),
 ):
@@ -371,14 +371,13 @@ def fitIntensity(
 
     Parameters
     ----------
-
-    func: function
-        periodic function to fit data to
     data: np.ndarray
         3D numpy array of intensity values corresponding to each detector pixel
         dim 0: Ri (real space vertical, down)
         dim 1: Rj (real space horizontal, right)
         dim 2: Rphi segments, (azimuthal angle from 0-360)
+    func: function
+        periodic function to fit data to
     p0: list, array, tuple
         length 5 list of initial values for use by curve_fit
     bounds: tuple
@@ -402,12 +401,12 @@ def fitIntensity(
     fitCov: 4D numpy array with covariance matrix of fitted parameters
     """
     Ri_max, Rj_max, segments = data.shape
-    fitParams = np.zeros((Ri_max, Ri_max, 5))
-    fitCov = np.zeros((Ri_max, Ri_max, 5, 5))
+    fitParams = np.zeros((Ri_max, Rj_max, 5))
+    fitCov = np.zeros((Ri_max, Rj_max, 5, 5))
 
     for Ri, Rj in tqdmnd(Ri_max, Rj_max):
         pop, pcov = curve_fit(
-            fun_cos_sq, np.arange(segments), data[Ri, Rj], p0=p0, bounds=bounds
+            func, np.arange(segments), data[Ri, Rj], p0=p0, bounds=bounds
         )
         fitParams[Ri, Rj] = pop
         fitCov[Ri, Rj] = pcov
