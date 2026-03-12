@@ -59,33 +59,35 @@ def discfloat(ci, cj, Qrmin, Qrmax, segments):
 
 
 def Qrmax_test_adjust(Qrmax, Qshape, ci, cj):
-    if ci + Qrmax < Qshape[0] and ci - Qrmax >= 0:
-        pass
-    elif ci + Qrmax >= Qshape[0]:
-        Qrmax = Qshape[0] - ci - 1
+    if isinstance(ci, np.ndarray):
+        cimax = ci.max()
+        cimin = ci.min()
+        cjmax = cj.max()
+        cjmin = cj.min()
+    else:
+        cimax = ci
+        cimin = ci
+        cjmax = cj
+        cjmin = cj
+    if cimax + Qrmax >= Qshape[0]:
+        Qrmax = Qshape[0] - cimax - 1
         print(
-            "Qrmax adjusted to "
-            + str(Qrmax)
-            + " as currently set bigger than the image"
+            f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
         )
-    elif ci - Qrmax < 0:
-        Qrmax = ci
+    elif cimin - Qrmax < 0:
+        Qrmax = cimin
         print(
-            "Qrmax adjusted to "
-            + str(Qrmax)
-            + " as currently set bigger than the image"
+            f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
         )
-    if cj + Qrmax < Qshape[1] and cj - Qrmax >= 0:
-        pass
-    elif cj + Qrmax >= Qshape[1]:
-        Qrmax = DP.shape[1] - cj - 1
+    if cjmax + Qrmax >= Qshape[1]:
+        Qrmax = Qshape[1] - cjmax - 1
         print(
-            "rmax adjusted to " + str(Qrmax) + " as currently set bigger than the image"
+            f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
         )
-    elif cj - Qrmax < Qshape[1]:
-        Qrmax = cj
+    elif cjmin - Qrmax < Qshape[1]:
+        Qrmax = cjmin
         print(
-            "rmax adjusted to " + str(Qrmax) + " as currently set bigger than the image"
+            f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
         )
     return Qrmax
 
