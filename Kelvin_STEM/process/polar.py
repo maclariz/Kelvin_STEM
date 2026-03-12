@@ -84,7 +84,7 @@ def Qrmax_test_adjust(Qrmax, Qshape, ci, cj):
         print(
             f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
         )
-    elif cjmin - Qrmax < Qshape[1]:
+    elif cjmin - Qrmax < 0:
         Qrmax = cjmin
         print(
             f"Qrmax adjusted to {Qrmax} as currently set bigger than the diffraction pattern"
