@@ -8,7 +8,7 @@ This module provides a number of convenience functions for reading in datafiles 
 
 
 def read_mib_to_np(
-    filepath,
+    mibpath,
     xdim,
     ydim,
     kx=256,
@@ -23,8 +23,8 @@ def read_mib_to_np(
 
     Parameters
     ----------
-    filepath: str
-        A text string for the complete filepath of the file including the filemane
+    mibpath: str
+        A text string for the complete filepath of the mib file including the filemane
     xdim: int
         Vertical dimension of the scan in pixels
     ydim: int
@@ -64,10 +64,10 @@ def read_mib_to_np(
                 ("foot", np.uint8, footer),
             ]
         )
-        data = np.memmap(filepath, frametype, mode="r", shape=(xdim, ydim + flybackpix))
+        data = np.memmap(mibpath, frametype, mode="r", shape=(xdim, ydim + flybackpix))
     except ValueError:
         # If the datafile didn't finish the full scan, we can still read what was there
-        file_size = os.path.getsize(filepath)
+        file_size = os.path.getsize(mibpath)
         xdim = int(file_size / ((ydim + 1) * (kx * ky * b + header + footer)))
         frametype = np.dtype(
             [
@@ -76,7 +76,7 @@ def read_mib_to_np(
                 ("foot", np.uint8, footer),
             ]
         )
-        data = np.memmap(filepath, frametype, mode="r", shape=(xdim, ydim + flybackpix))
+        data = np.memmap(mibpath, frametype, mode="r", shape=(xdim, ydim + flybackpix))
 
     # Reshape to expected 4D shape
     data = data.reshape(xdim, ydim + flybackpix)
@@ -95,8 +95,10 @@ def read_mib_from_dmscan(
 
     Parameters
     ----------
-    filepath: str
-        A text string for the complete filepath of the file including the filemane
+    dmpath: str
+        A text string for the complete filepath of the dm file including the filemane
+    mibpath: str
+        A text string for the complete filepath of the mib file including the filename
     xdim: int
         Vertical dimension of the scan in pixels
     ydim: int
