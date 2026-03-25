@@ -172,8 +172,8 @@ def findcomadistortion(pointsarrayring, s=0.1, alpha=0.1):
     axs[0].set_xlim(-180, 180)
 
     # Correct
-    pointsarrayrcorr = pointsarrayring.T[5] * (
-        1 - pop[0] / pop[2] * np.sin(np.radians(pointsarrayring.T[6] + pop[1]))
+    pointsarrayrcorr = pointsarrayring.T[5] / (
+        1 + pop[0] / pop[2] * np.sin(np.radians(pointsarrayring.T[6] + pop[1]))
     )
     axs[1].scatter(pointsarrayring.T[6], pointsarrayrcorr, s=s, alpha=alpha)
     axs[1].set_title("Corrected")
@@ -218,8 +218,8 @@ def undistortarray(rawarray, a, phi0, r0, Qr1, Qr2, plot=True):
     # getting the arrays and running the calcs
     rraw = rawarray[:, 5]
     phi = rawarray[:, 6]
-    corr = 1 - a / r0 * np.sin(np.radians(phi + phi0))
-    rcorr = rraw * corr
+    corr = 1 + a / r0 * np.sin(np.radians(phi + phi0))
+    rcorr = rraw / corr
     xcorr = -np.sin(np.radians(phi)) * rcorr
     ycorr = np.cos(np.radians(phi)) * rcorr
 
