@@ -1,4 +1,6 @@
 import matplotlib.patheffects as path_effects
+import numpy as np
+from colorsys import hsv_to_rgb
 
 """
 This module provides functions for visualisation and plotting.
