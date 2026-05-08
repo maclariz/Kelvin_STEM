@@ -1,6 +1,5 @@
 import matplotlib.patheffects as path_effects
 
-
 """
 This module provides functions for visualisation and plotting.
 """
@@ -80,3 +79,52 @@ def add_scalebar(
             path_effects.Normal(),
         ],
     )
+
+
+def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5):
+    """
+    gives arrays for plotting into a constant color wheel, however, this needs to be plotted
+    into an inset axis with projection='polar' set at declaration
+    (note different color wheels can be made where color varies with radiusw)
+
+    Parameters
+    ----------
+    minangle: int, float
+        The minimum angle (in degrees) to use in the wheel
+    maxangle: int, float
+        The maximum angle (in degrees) to use in the wheel
+    innerradius: float
+        The inner radius (in range 0-1)
+
+    Returns
+    -------
+    P: np.ndarray
+        array of phi values
+    S: np.ndarray
+        array of saturation values (radii for plot)
+    c: np.ndarray
+        array of c values (color tuples)
+    """
+    assert 0 <= innerradius < 1, "set min radius between 0 and 1"
+
+    # Set up the angle ranges
+    phi = np.linspace(np.radians(minangle), np.radians(maxangle), 300)
+    hue = (phi - np.radians(minangle)) / (np.radians(maxangle) - np.radians(minangle))
+    sat = np.linspace(innerradius, 1, 100)
+
+    # Make meshgrids for plotting
+    P, S = np.meshgrid(phi, sat)
+    H = (P - np.radians(minangle)) / (np.radians(maxangle) - np.radians(minangle))
+    V = np.ones_like(S)
+
+    # Make the colours
+    p, h, s, v = (
+        P.flatten().tolist(),
+        H.flatten().tolist(),
+        (V * sat_overall).flatten().tolist(),
+        V.flatten().tolist(),
+    )
+    c = [hsv_to_rgb(*x) for x in zip(h, s, v)]
+    c = np.array(c)
+
+    return P, S, c
