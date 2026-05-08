@@ -1,5 +1,6 @@
 import numpy as np
 import string
+import matplotlib.pyplot as plt
 
 """
 This module provides functions for cluster analysis of pointsarrays using sklearn functions.  Whilst the sklearn functions
