@@ -83,7 +83,7 @@ def add_scalebar(
     )
 
 
-def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5):
+def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5, saturation=0.8):
     """
     gives arrays for plotting into a constant color wheel, however, this needs to be plotted
     into an inset axis with projection='polar' set at declaration
@@ -123,7 +123,7 @@ def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5):
     p, h, s, v = (
         P.flatten().tolist(),
         H.flatten().tolist(),
-        (V * sat_overall).flatten().tolist(),
+        (V * saturation).flatten().tolist(),
         V.flatten().tolist(),
     )
     c = [hsv_to_rgb(*x) for x in zip(h, s, v)]
