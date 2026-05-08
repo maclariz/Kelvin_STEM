@@ -467,15 +467,15 @@ def phimean_min_L2_cluster(
 
 def threecol_im_from_letters(
     pointsarray,
-    L1clusterresult, 
-    L2clusterresult, 
-    imshape, 
-    L2key, 
-    letterlist, 
-    lettercolkey,
-    gamma = 0.5
+    L1clusterresult,
+    L2clusterresult,
+    imshape,
+    L2key,
+    letterlist,
+    gamma=0.5,
+    saturation=0.8,
 ):
-    '''
+    """
     makes a three colour image from a number of L2 clusters, denoted by a list of letters
     Uses a "lighten" algorithm where the lightest colour in each colour channel is chosen
     (much like an earlier idea implemented in Photoshop and similar).  Implementing a mid colour
@@ -506,17 +506,58 @@ def threecol_im_from_letters(
         Image of shape (*imshape,3) that will plot in plt.imshow()
     stackmax: float
         The maximum intensity in the stack (for normalising against another image, if needed)
-    '''
-    stack = np.zeros(shape=(imshape[0],imshape[1],3,len(letterlist)))
+    """
+    stack = np.zeros(shape=(imshape[0], imshape[1], 3, len(letterlist)))
+    lettercolkey = make_lettercolkey_from_phimean_min(
+        pointsarray, L1clusterresult, L2clusterresult, L2key, saturation
+    )
     for n, letter in enumerate(letterlist):
-        selpoints = letterselectedpoints(pointsarray,L2key,letter,L1clusterresult,L2clusterresult)
-        im = DDFimagefromselectedpoints(selpoints,shape)**gamma
-        stack[:,:,:,n] = im[:,:,np.newaxis]
+        selpoints = letterselectedpoints(
+            pointsarray, L2key, letter, L1clusterresult, L2clusterresult
+        )
+        im = DDFimagefromselectedpoints(selpoints, imshape) ** gamma
+        stack[:, :, :, n] = im[:, :, np.newaxis]
     stackmax = stack.max()
     stack /= stackmax
     for n, letter in enumerate(letterlist):
         col = np.array(lettercolkey[letter])
-        stack[:,:,:,n] *= col[np.newaxis,np.newaxis,:]
+        stack[:, :, :, n] *= col[np.newaxis, np.newaxis, :]
     threecol_im = stack.max(axis=3)
 
     return threecol_im, stackmax
+
+
+def make_lettercolkey_from_phimean_min(
+    pointsarray, L1clusterresult, L2clusterresult, L2key, saturation
+):
+    """
+    makes a dictionary that converts a letter to a colour, based on the lowest angle phi in that L2 cluster
+
+    Parameters
+    ----------
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
+    L1clusterresult: complex object
+        The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
+    L2clusterresult: complex object
+        The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
+    L2key: dict
+        A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    saturation: float
+        A value from 0-1 for the saturation of colour in the HSV model
+
+    Returns
+    -------
+    lettercolkey: dict
+        Converts letters (str) to colours (as RGB in 0-1 range) as a 3-tuple
+    """
+    lettercolkey = {}
+    for letter in L2key:
+        phimean = phimean_min_L2_cluster(
+            letter, L2key, pointsarray, L1clusterresult, L2clusterresult
+        )
+        h = phimean / 180
+        col = hsv_to_rgb(h, saturation, 1)
+        lettercolkey.update({letter: col})
+
+    return lettercolkey
