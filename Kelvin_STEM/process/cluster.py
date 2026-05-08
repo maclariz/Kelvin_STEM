@@ -249,7 +249,7 @@ def letters():
     return l1 + l2 + l3
 
 
-def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False):
+def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
     """
     Takes a L1 cluster result of running some cluster algorithm in Scikit-Learn (e.g. DBSCAN)
     on 4D data in a points array and plots the results in reciprocal and real space.  Everything
@@ -265,9 +265,8 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False)
     L1cluster_result: complex object
         Result of a scikit-learn clustering algorithm (all have the same attributes).  Ultimately,
         it is the output of .labels_ that is used
-    pointsarrayRF: np.ndarray
-        A points array, as defined in py4DSTEM.process.diffraction.digital_dark_field, and expected
-        to be radially filtered (although not necessary)
+    pointsarray: np.ndarray
+        A points array, as defined in py4DSTEM.process.diffraction.digital_dark_field
     QRmax: int, float
         maximum radius for the reciprocal space plot
     returnfig: bool
@@ -278,8 +277,8 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False)
         Only if returnfig==True
     """
     figure, axs = plt.subplots(1, 2, figsize=(12, 5.5))
-    Rx_1, Rx_2 = int(pointsarrayRF.T[3].min()), int(pointsarrayRF.T[3].max())
-    Ry_1, Ry_2 = int(pointsarrayRF.T[4].min()), int(pointsarrayRF.T[4].max())
+    Rx_1, Rx_2 = int(pointsarray.T[3].min()), int(pointsarray.T[3].max())
+    Ry_1, Ry_2 = int(pointsarray.T[4].min()), int(pointsarray.T[4].max())
 
     axs[0].set_title("DBscan, Qx, Qy, Rx, Ry")
     axs[0].set_xlabel("Qx (pix)", fontsize=24)
@@ -294,7 +293,7 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False)
     cmap = "rainbow"
 
     uniquelabels = np.unique(L1cluster_result.labels_)
-    COMs = COMs_R(pointsarrayRF, L1cluster_result, weighted=False)
+    COMs = COMs_R(pointsarray, L1cluster_result, weighted=False)
 
     for n, clusterlabel in enumerate(uniquelabels):
         cindex = n / uniquelabels[1:].shape[0] * 5 % 1
@@ -303,7 +302,7 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False)
         else:
             c = plt.colormaps[cmap](cindex)
 
-        points = pointsarrayRF[L1cluster_result.labels_ == clusterlabel]
+        points = pointsarray[L1cluster_result.labels_ == clusterlabel]
 
         axs[0].scatter(points.T[1], points.T[0], label=n, s=0.1, alpha=0.2, color=c)
         maxint = np.argmax(points.T[2])
@@ -361,7 +360,7 @@ def show_L1_clusters_in_real_space(
         i, j = int(n / col), n % col
         ax = plt.subplot(gs[i, j])
         ax.set_axis_off()
-        selpoints = pointsarrayRF[db1.labels_ == cluster_label]
+        selpoints = pointsarray[db1.labels_ == cluster_label]
         im = DDFimagefromselectedpoints(selpoints, shape)
         ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap="inferno")
         ax.text(10, 20, cluster_label, color="w", size=14, fontweight="bold")
@@ -507,7 +506,7 @@ def threecol_im_from_letters(
     stack = np.zeros(shape=(imshape[0], imshape[1], 3, len(letterlist)))
     for n, letter in enumerate(letterlist):
         selpoints = letterselectedpoints(
-            pointsarrayRF, L2key, letter, L1clusterresult, L2clusterresult
+            pointsarray, L2key, letter, L1clusterresult, L2clusterresult
         )
         im = DDFimagefromselectedpoints(selpoints, shape) ** gamma
         stack[:, :, :, n] = im[:, :, np.newaxis]
