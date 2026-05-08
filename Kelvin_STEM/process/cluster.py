@@ -357,7 +357,7 @@ def show_L1_clusters_in_real_space(
     row = int(np.ceil(l / col))
     fig = plt.figure(figsize=(w, w * row / col / ar))
     gs = GridSpec.GridSpec(row, col)
-    for n, cluster_label in enumerate(unique_labels[1:]):
+    for n, cluster_label in enumerate(uniquelabels[1:]):
         i, j = int(n / col), n % col
         ax = plt.subplot(gs[i, j])
         ax.set_axis_off()
@@ -454,8 +454,8 @@ def phimean_min_L2_cluster(
     phimeans.min(): float
         The lowest mean phi value
     """
-    unique_labels = np.unique(L1clusterresult.labels_)
-    labels = unique_labels[1:][L2clusterresult.labels_ == L2key[letter]]
+    uniquelabels = np.unique(L1clusterresult.labels_)
+    labels = uniquelabels[1:][L2clusterresult.labels_ == L2key[letter]]
     phimeans = np.empty(shape=labels.shape)
     for n, label in enumerate(labels):
         points = pointsarray[L1clusterresult.labels_ == label]
