@@ -3,6 +3,7 @@ import string
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as GridSpec
 import matplotlib.colors as colors
+from colorsys import hsv_to_rgb
 
 """
 This module provides functions for cluster analysis of pointsarrays using sklearn functions.  Whilst the sklearn functions
