@@ -360,7 +360,7 @@ def show_L1_clusters_in_real_space(
         i, j = int(n / col), n % col
         ax = plt.subplot(gs[i, j])
         ax.set_axis_off()
-        selpoints = pointsarray[db1.labels_ == cluster_label]
+        selpoints = pointsarray[L1cluster_result.labels_ == cluster_label]
         im = DDFimagefromselectedpoints(selpoints, shape)
         ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap="inferno")
         ax.text(10, 20, cluster_label, color="w", size=14, fontweight="bold")
