@@ -1,7 +1,6 @@
 import numpy as np
 import string
 
-
 """
 This module provides functions for cluster analysis of pointsarrays using sklearn functions.  Whilst the sklearn functions
 are not directly quoted in here, it explicitly uses the attributes of sklearn outputs.  Thus, at least one clustering 
@@ -234,6 +233,287 @@ def letters():
     Returns
     -------
     letters: list
-        list of strings [A,B,C....x,y,z]
+        list of strings [A,B,C....a,b,c....Da,Db,Dc....Dz]
     """
-    return string.ascii_uppercase + string.ascii_lowercase
+    l1 = [letter for letter in string.ascii_uppercase] + [
+        letter for letter in string.ascii_lowercase
+    ]
+    l2 = ["A" + letter for letter in string.ascii_lowercase] + [
+        "B" + letter for letter in string.ascii_lowercase
+    ]
+    l3 = ["C" + letter for letter in string.ascii_lowercase] + [
+        "D" + letter for letter in string.ascii_lowercase
+    ]
+    return l1 + l2 + l3
+
+
+def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False):
+    """
+    Takes a L1 cluster result of running some cluster algorithm in Scikit-Learn (e.g. DBSCAN)
+    on 4D data in a points array and plots the results in reciprocal and real space.  Everything
+    is plotted in uncalibrated pixels, since this is just about seeing the results.
+    It expects you have applied some radial filtering (although this is not necessary)
+    and sets a maximum radius in reciprocal space, purely for visualisation (not calculation)
+    purposes.  It also plots the unclustered points in pale grey.
+    You can use it for simple inline visualisation in a notebook, or can return a figure for
+    saving.
+
+    Parameters
+    ----------
+    L1cluster_result: complex object
+        Result of a scikit-learn clustering algorithm (all have the same attributes).  Ultimately,
+        it is the output of .labels_ that is used
+    pointsarrayRF: np.ndarray
+        A points array, as defined in py4DSTEM.process.diffraction.digital_dark_field, and expected
+        to be radially filtered (although not necessary)
+    QRmax: int, float
+        maximum radius for the reciprocal space plot
+    returnfig: bool
+        Tells whether to give a return.  If false, only displays a plot.
+    Returns
+    -------
+    figure: matplotlib figure
+        Only if returnfig==True
+    """
+    figure, axs = plt.subplots(1, 2, figsize=(12, 5.5))
+    Rx_1, Rx_2 = int(pointsarrayRF.T[3].min()), int(pointsarrayRF.T[3].max())
+    Ry_1, Ry_2 = int(pointsarrayRF.T[4].min()), int(pointsarrayRF.T[4].max())
+
+    axs[0].set_title("DBscan, Qx, Qy, Rx, Ry")
+    axs[0].set_xlabel("Qx (pix)", fontsize=24)
+    axs[0].set_ylabel("Qy (pix)", fontsize=24)
+    axs[0].set_ylim(QRmax, -QRmax)
+    axs[0].set_xlim(-QRmax, QRmax)
+
+    axs[1].set_title("DBscan, Qx, Qy, Rx, Ry")
+    axs[1].set_xlabel("Ry (pix)", fontsize=24)
+    axs[1].set_ylabel("Rx (pix)", fontsize=24)
+    axs[1].set_ylim(Rx_2, Rx_1)
+    cmap = "rainbow"
+
+    uniquelabels = np.unique(L1cluster_result.labels_)
+    COMs = COMs_R(pointsarrayRF, L1cluster_result, weighted=False)
+
+    for n, clusterlabel in enumerate(unique_labels):
+        cindex = n / unique_labels[1:].shape[0] * 5 % 1
+        if clusterlabel == -1:
+            c = "lightgrey"
+        else:
+            c = plt.colormaps[cmap](cindex)
+
+        points = pointsarrayRF[L1cluster_result.labels_ == clusterlabel]
+
+        axs[0].scatter(points.T[1], points.T[0], label=n, s=0.1, alpha=0.2, color=c)
+        maxint = np.argmax(points.T[2])
+        r, ang = points[maxint][5] + 8, np.radians(points[maxint][6])
+        labx, laby = np.sin(ang) * r, np.cos(ang) * r
+        axs[0].annotate(
+            n,
+            (points[maxint, 1], points[maxint, 0]),
+            (laby, -labx),
+            horizontalalignment="center",
+            verticalalignment="center",
+            size=7,
+        )
+
+        axs[1].scatter(points.T[4], points.T[3], label=n, s=1, alpha=0.5, color=c)
+        if clusterlabel != -1:
+            COM = COMs[clusterlabel]
+            axs[1].text(COM[1], COM[0], clusterlabel)
+
+    if returnfig:
+        return figure
+
+
+def show_L1_clusters_in_real_space(
+    pointsarray, L1cluster_result, col=3, gamma=0.25, returnfig=False
+):
+    """
+    Function to show real space plots of L1 clustering outputs
+
+    Parameters
+    ----------
+    L1cluster_result: complex object
+        Result of a scikit-learn clustering algorithm (all have the same attributes).  Ultimately,
+        it is the output of .labels_ that is used
+    pointsarray: np.ndarray
+        A points array, as defined in py4DSTEM.process.diffraction.digital_dark_field
+    cols: int
+        number of columns to be used
+    returnfig: bool
+        Tells whether to give a return.  If false, only displays a plot.
+    Returns
+    -------
+    figure: matplotlib figure
+        Only if returnfig==True
+    """
+    shape = (int(pointsarray.T[3].max()) + 1, int(pointsarray.T[4].max()) + 1)
+    uniquelabels = np.unique(L1cluster_result.labels_)
+    l = uniquelabels.shape[0]
+    ar = shape[1] / shape[0]
+    w = 10
+    row = int(np.ceil(l / col))
+    fig = plt.figure(figsize=(w, w * row / col / ar))
+    gs = GridSpec.GridSpec(row, col)
+    for n, cluster_label in enumerate(unique_labels[1:]):
+        i, j = int(n / col), n % col
+        ax = plt.subplot(gs[i, j])
+        ax.set_axis_off()
+        selpoints = pointsarrayRF[db1.labels_ == cluster_label]
+        im = DDFimagefromselectedpoints(selpoints, shape)
+        ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap="inferno")
+        ax.text(10, 20, cluster_label, color="w", size=14, fontweight="bold")
+
+    if returnfig:
+        return fig
+
+
+def show_L2_clusters_in_real_space(
+    pointsarray,
+    L1cluster_result,
+    L2cluster_result,
+    L2key,
+    letters,
+    gamma=0.5,
+    col=3,
+    returnfig=False,
+):
+    """
+    Function to show real space plots of L1 clustering outputs
+
+     Parameters
+    ----------
+    pointsarray: np.ndarray
+        A points array, as defined in py4DSTEM.process.diffraction.digital_dark_field
+    L2cluster_result: complex object
+        Result of a scikit-learn clustering algorithm (all have the same attributes).  Ultimately,
+        it is the output of .labels_ that is used
+    L1cluster_result: complex object
+        Result of a scikit-learn clustering algorithm (all have the same attributes).  Ultimately,
+        it is the output of .labels_ that is used
+    gamma: float
+        A gamma for the intensity normalisation (Power normalisation), <1 flattens contrast
+    cols: int
+        number of columns to be used
+    returnfig: bool
+        Tells whether to give a return.  If false, only displays a plot.
+    Returns
+    -------
+    figure: matplotlib figure
+        Only if returnfig==True
+    """
+    shape = (int(pointsarray.T[3].max()) + 1, int(pointsarray.T[4].max()) + 1)
+    l = len(letters)
+    ar = shape[1] / shape[0]
+    w = 10
+    row = int(np.ceil(l / col))
+    fig = plt.figure(figsize=(w, w * row / col / ar))
+    gs = GridSpec.GridSpec(row, col)
+
+    ims = np.empty(shape=(*shape, l))
+    for n, letter in enumerate(letters):
+        selpoints = letterselectedpoints(
+            pointsarray, L2key, letter, L1cluster_result, L2cluster_result
+        )
+        im = DDFimagefromselectedpoints(selpoints, shape)
+        i, j = int(n / col), n % col
+        ax = plt.subplot(gs[i, j])
+        ax.set_axis_off()
+        ax.imshow(im, cmap="inferno", norm=colors.PowerNorm(gamma=gamma))
+        ax.text(10, 20, letter, color="w", size=14, fontweight="bold")
+
+    if returnfig:
+        return fig
+
+
+def phimean_min_L2_cluster(
+    letter, L2key, L1clusterresult, L2clusterresult, pointsarray
+):
+    """
+    Finds the lowest mean phi value for any of the L1 clusters including in an L2 cluster
+    (i.e. the lowest angle diffraction spot in this cluster of spots for a given crystal).
+    Angle, as ever, measured ACW from horizontal right.
+
+    Parameters
+    ----------
+    letter: str
+        A letter in the list from letters() denoting one cluster in the L2 cluster result
+    L2key: dict
+        A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    L1clusterresult: complex object
+        The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
+    L2clusterresult: complex object
+        The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
+
+    Returns
+    -------
+    phimeans.min(): float
+        The lowest mean phi value
+    """
+    unique_labels = np.unique(L1clusterresult.labels_)
+    labels = unique_labels[1:][L2clusterresult.labels_ == L2key[letter]]
+    phimeans = np.empty(shape=labels.shape)
+    for n, label in enumerate(labels):
+        points = pointsarray[L1clusterresult.labels_ == label]
+        phimeans[n] = points.T[6].mean()
+    phimeans = np.where(phimeans < 0, phimeans + 180, phimeans)
+
+    return phimeans.min()
+
+
+def threecol_im_from_letters(
+    L1clusterresult,
+    L2clusterresult,
+    imshape,
+    L2key,
+    letterlist,
+    lettercolkey,
+    gamma=0.5,
+):
+    """
+    makes a three colour image from a number of L2 clusters, denoted by a list of letters
+    Uses a "lighten" algorithm where the lightest colour in each colour channel is chosen
+    (much like an earlier idea implemented in Photoshop and similar).  Implementing a mid colour
+    would be harder since you have to ignore all the zeros in every channel.
+
+    Parameters
+    ----------
+    L1clusterresult: complex object
+        The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
+    L2clusterresult: complex object
+        The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
+    imshape: tuple of ints
+        shape of the images as a standard 2-tuple (of ints)
+    L2key: dict
+        A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    letterlist: str
+        A list of letters in the list from letters() denoting one cluster in the L2 cluster result
+    lettercolkey: dict
+        Defined colours (as 3-tuples of (R,G,B) [in range 0-1]) for each letter in the letterlist
+    gamma: float
+        A number used for setting the power norm for display (<1 flattens contrast, 1 does nothing)
+
+    Returns
+    -------
+    threecol_im: np.ndarray
+        Image of shape (*imshape,3) that will plot in plt.imshow()
+    crystmax: float
+        The maximum intensity in the stack (for normalising against an amorphous image)
+    """
+    stack = np.zeros(shape=(imshape[0], imshape[1], 3, len(letterlist)))
+    for n, letter in enumerate(letterlist):
+        selpoints = letterselectedpoints(
+            pointsarrayRF, L2key, letter, L1clusterresult, L2clusterresult
+        )
+        im = DDFimagefromselectedpoints(selpoints, shape) ** gamma
+        stack[:, :, :, n] = im[:, :, np.newaxis]
+    crystmax = stack.max()
+    stack /= crystmax
+    for n, letter in enumerate(letterlist):
+        col = np.array(lettercolkey[letter])
+        stack[:, :, :, n] *= col[np.newaxis, np.newaxis, :]
+    threecol_im = stack.max(axis=3)
+
+    return threecol_im, crystmax
