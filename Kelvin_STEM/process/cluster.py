@@ -429,7 +429,7 @@ def show_L2_clusters_in_real_space(
 
 
 def phimean_min_L2_cluster(
-    letter, L2key, L1clusterresult, L2clusterresult, pointsarray
+    letter, L2key, pointsarray, L1clusterresult, L2clusterresult
 ):
     """
     Finds the lowest mean phi value for any of the L1 clusters including in an L2 cluster
@@ -442,12 +442,12 @@ def phimean_min_L2_cluster(
         A letter in the list from letters() denoting one cluster in the L2 cluster result
     L2key: dict
         A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
     L1clusterresult: complex object
         The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
     L2clusterresult: complex object
         The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
-    pointsarray: np.ndarray
-        The original array of diffraction peaks that was run through L1 clustering
 
     Returns
     -------
@@ -466,15 +466,16 @@ def phimean_min_L2_cluster(
 
 
 def threecol_im_from_letters(
-    L1clusterresult,
-    L2clusterresult,
-    imshape,
-    L2key,
-    letterlist,
+    pointsarray,
+    L1clusterresult, 
+    L2clusterresult, 
+    imshape, 
+    L2key, 
+    letterlist, 
     lettercolkey,
-    gamma=0.5,
+    gamma = 0.5
 ):
-    """
+    '''
     makes a three colour image from a number of L2 clusters, denoted by a list of letters
     Uses a "lighten" algorithm where the lightest colour in each colour channel is chosen
     (much like an earlier idea implemented in Photoshop and similar).  Implementing a mid colour
@@ -482,6 +483,8 @@ def threecol_im_from_letters(
 
     Parameters
     ----------
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
     L1clusterresult: complex object
         The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
     L2clusterresult: complex object
@@ -501,21 +504,19 @@ def threecol_im_from_letters(
     -------
     threecol_im: np.ndarray
         Image of shape (*imshape,3) that will plot in plt.imshow()
-    crystmax: float
-        The maximum intensity in the stack (for normalising against an amorphous image)
-    """
-    stack = np.zeros(shape=(imshape[0], imshape[1], 3, len(letterlist)))
+    stackmax: float
+        The maximum intensity in the stack (for normalising against another image, if needed)
+    '''
+    stack = np.zeros(shape=(imshape[0],imshape[1],3,len(letterlist)))
     for n, letter in enumerate(letterlist):
-        selpoints = letterselectedpoints(
-            pointsarray, L2key, letter, L1clusterresult, L2clusterresult
-        )
-        im = DDFimagefromselectedpoints(selpoints, shape) ** gamma
-        stack[:, :, :, n] = im[:, :, np.newaxis]
-    crystmax = stack.max()
-    stack /= crystmax
+        selpoints = letterselectedpoints(pointsarray,L2key,letter,L1clusterresult,L2clusterresult)
+        im = DDFimagefromselectedpoints(selpoints,shape)**gamma
+        stack[:,:,:,n] = im[:,:,np.newaxis]
+    stackmax = stack.max()
+    stack /= stackmax
     for n, letter in enumerate(letterlist):
         col = np.array(lettercolkey[letter])
-        stack[:, :, :, n] *= col[np.newaxis, np.newaxis, :]
+        stack[:,:,:,n] *= col[np.newaxis,np.newaxis,:]
     threecol_im = stack.max(axis=3)
 
-    return threecol_im, crystmax
+    return threecol_im, stackmax
