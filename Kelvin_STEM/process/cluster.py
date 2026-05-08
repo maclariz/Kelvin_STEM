@@ -1,6 +1,7 @@
 import numpy as np
 import string
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as GridSpec
 
 """
 This module provides functions for cluster analysis of pointsarrays using sklearn functions.  Whilst the sklearn functions
