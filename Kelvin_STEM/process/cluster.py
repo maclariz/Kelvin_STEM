@@ -295,8 +295,8 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarrayRF, QRmax, returnfig=False)
     uniquelabels = np.unique(L1cluster_result.labels_)
     COMs = COMs_R(pointsarrayRF, L1cluster_result, weighted=False)
 
-    for n, clusterlabel in enumerate(unique_labels):
-        cindex = n / unique_labels[1:].shape[0] * 5 % 1
+    for n, clusterlabel in enumerate(uniquelabels):
+        cindex = n / uniquelabels[1:].shape[0] * 5 % 1
         if clusterlabel == -1:
             c = "lightgrey"
         else:
