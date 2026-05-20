@@ -4,7 +4,6 @@ from matplotlib.ticker import MultipleLocator
 import matplotlib.patches as mpatches
 from scipy.optimize import curve_fit
 
-
 """
 This module provides functions for working with nanobeam diffraction data in a pointsarray (i.e. vector) representation
 and particularly in the Qr, Qphi polar representation.  This includes histogram (similar to diffractogram) plots and distortion
@@ -237,3 +236,51 @@ def undistortarray(rawarray, a, phi0, r0, Qr1, Qr2, plot=True):
         )
 
     return correctedarray
+
+
+def flip_vertical_flip_points_array(pointsarray):
+    """
+    Flips a points array vertically (i.e. reversing Qx and Qphi) and returns the flipped version
+
+    Parameters
+    ----------
+    pointsarray: np.ndarray
+        Nx7 array of diffraction peaks.
+
+    Returns
+    -------
+     pointsarray: np.ndarray
+        flipped Nx7 array of diffraction peaks.
+    """
+    pointsarray[:, 0] = -pointsarray[:, 0]
+    pointsarray[:, 6] = -pointsarray[:, 6]
+    return pointsarray
+
+
+def rotate_points_array(pointsarray, angle):
+    """
+    Rotates a points array in the Q space.  Positive is anticlockwise (along with the
+    definition of Qphi).
+
+    Application of the rotation to Qphi is trivial (with minor cleaning to get it back in
+    the -180 - 180 range, but requires some trigenometry to apply to Qx and Qy
+
+    Parameters
+    ----------
+    pointsarray: np.ndarray
+        Nx7 array of diffraction peaks.
+
+    Returns
+    -------
+     pointsarray: np.ndarray
+        rotated Nx7 array of diffraction peaks.
+    """
+
+    pointsarray[:, 6] += angle
+    pointsarray[:, 6] = np.where(
+        pointsarray[:, 6] > 180, pointsarray[:, 6] - 360, pointsarray[:, 6]
+    )
+    angrad = np.radians(pointsarray[:, 6])
+    pointsarray[:, 0] = -pointsarray[:, 5] * np.sin(angrad)
+    pointsarray[:, 1] = pointsarray[:, 5] * np.cos(angrad)
+    return pointsarray
