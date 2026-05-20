@@ -351,7 +351,7 @@ def show_L1_clusters_in_real_space(
             color="w",
             size=14,
             fontweight="bold",
-            verticalalalignment=top,
+            verticalalalignment="top",
         )
 
     if returnfig:
