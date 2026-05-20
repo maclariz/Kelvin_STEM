@@ -351,7 +351,7 @@ def show_L1_clusters_in_real_space(
             color="w",
             size=14,
             fontweight="bold",
-            verticalalalignment="top",
+            verticalalignment="top",
         )
 
     if returnfig:
@@ -496,7 +496,7 @@ def show_L2_clusters_in_real_space(
         ax.set_axis_off()
         ax.imshow(im, cmap="inferno", norm=colors.PowerNorm(gamma=gamma))
         plt.text(
-            5, 5, letter, color="w", size=14, fontweight="bold", verticalalalignment=top
+            5, 5, letter, color="w", size=14, fontweight="bold", verticalalignment="top"
         )
 
     if returnfig:
@@ -718,9 +718,6 @@ def plot_L3_2D_clusters(L3cluster_result, pointsarray, QRmax, s=100, returnfig=F
     COMs3 = COMs_Q(pointsarray, L3cluster_result, weighted=True)
 
     for n, clusterlabel in enumerate(uniquelabels):
-        cindex = n / uniquelabels[1:].shape[0] * 5 % 1
-        c = plt.colormaps[cmap](cindex)
-
         points = pointsarray[L3cluster_result.labels_ == clusterlabel]
 
         ax.scatter(
