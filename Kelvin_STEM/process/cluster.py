@@ -12,6 +12,7 @@ method from sklearn.cluster has to be imported in your notebook to produce outpu
 """
 # General COM functions
 
+
 def COM_cluster_R(pointsarray, clusterresult, clusterlabel, weighted=False):
     """
     Calculates either real space centre of mass (weighted by intensity) or a simplified version with
@@ -75,7 +76,9 @@ def COMs_R(pointsarray, clusterresult, weighted=True):
     return COMs
 
 
-def COM_cluster_Q(pointsarray, clusterresult, clusterlabel, weighted=False, returnint=False):
+def COM_cluster_Q(
+    pointsarray, clusterresult, clusterlabel, weighted=False, returnint=False
+):
     """
     Calculates either reciprocal space centre of mass (weighted by intensity) or a simplified version with
     no intensity from a specific cluster after running cluster analysis
@@ -108,7 +111,10 @@ def COM_cluster_Q(pointsarray, clusterresult, clusterlabel, weighted=False, retu
     else:
         weights = np.ones(shape=clusterpoints.shape[0])
     if returnint:
-        COM = np.append((clusterpoints.T[2] * clusterpoints.T[:2]).sum(axis=1) / weights.sum(), intensity)
+        COM = np.append(
+            (clusterpoints.T[2] * clusterpoints.T[:2]).sum(axis=1) / weights.sum(),
+            intensity,
+        )
     else:
         COM = (clusterpoints.T[2] * clusterpoints.T[:2]).sum(axis=1) / weights.sum()
     return COM
@@ -144,11 +150,19 @@ def COMs_Q(pointsarray, clusterresult, weighted=True, returnint=False):
         i = 2
     COMs = np.zeros((clusterlabels.shape[0], i))
     for n, clusterlabel in enumerate(clusterlabels):
-        COM = COM_cluster_Q(pointsarray, clusterresult, clusterlabel, weighted=weighted, returnint=returnint)
-        COMs[n,:i] = COM
+        COM = COM_cluster_Q(
+            pointsarray,
+            clusterresult,
+            clusterlabel,
+            weighted=weighted,
+            returnint=returnint,
+        )
+        COMs[n, :i] = COM
     return COMs
 
+
 # Basic functions
+
 
 def DDFfromcluster(pointsarray, clusterlabels, label, Rshape):
     """
@@ -206,7 +220,9 @@ def DDFimagefromselectedpoints(selectedpoints, Rshape):
         DDFim[point[3].astype(int), point[4].astype(int)] += point[2]
     return DDFim
 
+
 # Level 1 clustering - working on raw pointsarray data (possibly after some radial filtering)
+
 
 def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
     """
@@ -284,6 +300,7 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
     if returnfig:
         return figure
 
+
 def show_L1_clusters_in_real_space(
     pointsarray, L1cluster_result, cluster_list=None, col=3, gamma=0.25, returnfig=False
 ):
@@ -312,7 +329,7 @@ def show_L1_clusters_in_real_space(
     shape = (int(pointsarray.T[3].max()) + 1, int(pointsarray.T[4].max()) + 1)
     if isinstance(cluster_list, (np.ndarray)):
         pass
-    else: 
+    else:
         cluster_list = np.unique(L1cluster_result.labels_)[1:]
     l = cluster_list.shape[0]
     ar = shape[1] / shape[0]
@@ -328,17 +345,22 @@ def show_L1_clusters_in_real_space(
         im = DDFimagefromselectedpoints(selpoints, shape)
         ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap="inferno")
         ax.text(
-            5, 5, 
-            cluster_label, 
-            color="w", size=14, fontweight="bold",
-            verticalalalignment=top
+            5,
+            5,
+            cluster_label,
+            color="w",
+            size=14,
+            fontweight="bold",
+            verticalalalignment=top,
         )
 
     if returnfig:
         return fig
 
+
 # Level 2 clustering - grouping L1 clusters that come from the same spatial locations
 # these are referred to by letters, to avoid confusion with the numbered L1 clusters
+
 
 def letters():
     """
@@ -359,6 +381,7 @@ def letters():
         "D" + letter for letter in string.ascii_lowercase
     ]
     return l1 + l2 + l3
+
 
 def letterselectedpoints(pointsarray, L2key, letter, L1clusterresult, L2clusterresult):
     """
@@ -393,6 +416,7 @@ def letterselectedpoints(pointsarray, L2key, letter, L1clusterresult, L2clusterr
             (selectedpoints, pointsarray[L1clusterresult.labels_ == L1cluster])
         )
     return selectedpoints
+
 
 def show_L2_clusters_in_real_space(
     pointsarray,
@@ -446,14 +470,13 @@ def show_L2_clusters_in_real_space(
         ax = plt.subplot(gs[i, j])
         ax.set_axis_off()
         ax.imshow(im, cmap="inferno", norm=colors.PowerNorm(gamma=gamma))
-            5, 5, 
-            letter, 
-            color="w", size=14, fontweight="bold",
-            verticalalalignment=top
+        plt.text(
+            5, 5, letter, color="w", size=14, fontweight="bold", verticalalalignment=top
         )
 
     if returnfig:
         return fig
+
 
 def phimean_min_L2_cluster(
     letter, L2key, pointsarray, L1clusterresult, L2clusterresult
@@ -491,6 +514,7 @@ def phimean_min_L2_cluster(
 
     return phimeans.min()
 
+
 def make_lettercolkey_from_phimean_min(
     pointsarray, L1clusterresult, L2clusterresult, L2key, saturation
 ):
@@ -526,12 +550,9 @@ def make_lettercolkey_from_phimean_min(
 
     return lettercolkey
 
+
 def filter_pointsarray_from_L2_cluster(
-    pointsarray,
-    L1cluster_result,
-    L2cluster_result,
-    L2key,
-    letter
+    pointsarray, L1cluster_result, L2cluster_result, L2key, letter
 ):
     """
     Function to show real space plots of L1 clustering outputs
@@ -556,13 +577,14 @@ def filter_pointsarray_from_L2_cluster(
         A points array, only containing points in the chosen cluster
     """
     selpoints = np.vstack(
-            selpoints,
-            letterselectedpoints(
-                pointsarray, L2key, letter, L1cluster_result, L2cluster_result
-            )
-        )
+        selpoints,
+        letterselectedpoints(
+            pointsarray, L2key, letter, L1cluster_result, L2cluster_result
+        ),
+    )
 
     return selpoints
+
 
 def threecol_im_from_letters(
     pointsarray,
@@ -625,13 +647,15 @@ def threecol_im_from_letters(
 
     return threecol_im, stackmax
 
+
 # L3 clustering - remaking diffraction patterns from the data in L2 clusters - especially for ACOM
+
 
 def plot_L3_2D_clusters(L3cluster_result, pointsarray, QRmax, s=100, returnfig=False):
     """
     Takes a L3 cluster result of running some cluster algorithm in Scikit-Learn (e.g. DBSCAN)
-    on 2D data in a points array that relates to one crystal only and plots the results in 
-    reciprocal space only.  Everything is plotted in uncalibrated pixels, since this is just 
+    on 2D data in a points array that relates to one crystal only and plots the results in
+    reciprocal space only.  Everything is plotted in uncalibrated pixels, since this is just
     about seeing the results.
     No unclustered points are expected as everything in the cluster at L3 should be relevant
     You can use it for simple inline visualisation in a notebook, or can return a figure for
@@ -666,24 +690,26 @@ def plot_L3_2D_clusters(L3cluster_result, pointsarray, QRmax, s=100, returnfig=F
     ax.set_xlim(-QRmax, QRmax)
 
     uniquelabels = np.unique(L3cluster_result.labels_)
-    COMs3 = COMs_Q(pointsarray,L3cluster_result,weighted=True)
-    
+    COMs3 = COMs_Q(pointsarray, L3cluster_result, weighted=True)
+
     for n, clusterlabel in enumerate(uniquelabels):
         cindex = n / uniquelabels[1:].shape[0] * 5 % 1
         c = plt.colormaps[cmap](cindex)
 
         points = pointsarray[L3cluster_result.labels_ == clusterlabel]
 
-        ax.scatter(points.T[1], points.T[0], label=n, s=s*points.T[2], alpha=1, c='navy')
+        ax.scatter(
+            points.T[1], points.T[0], label=n, s=s * points.T[2], alpha=1, c="navy"
+        )
         maxint = np.argmax(points.T[2])
         labx, laby = COMs3[n]
         ax.annotate(
             n,
             (laby, labx),
-            (laby-2, labx+2),
+            (laby - 2, labx + 2),
             horizontalalignment="center",
             verticalalignment="center",
-            color='w',
+            color="w",
             size=7,
         )
 
