@@ -383,6 +383,31 @@ def letters():
     return l1 + l2 + l3
 
 
+def L1clusters_in_L2cluster(letter, L2key, L1cluster_result, L2cluster_result):
+    """
+    Finds the L1 clusters that are part of an L2 cluster and just returns their labels
+    Parameters
+    ----------
+    letter: str
+        A letter in the list from letters() denoting one cluster in the L2 cluster result
+    L2key: dict
+        A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
+    L1clusterresult: complex object
+        The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
+    L2clusterresult: complex object
+        The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
+    Returns
+    -------
+    labels: np.ndarray
+        A list of integer labels for L1 clusters
+    """
+    uniquelabels = np.unique(L1cluster_result.labels_)
+    labels = uniquelabels[1:][L2cluster_result.labels_ == L2key[letter]]
+    return labels
+
+
 def letterselectedpoints(pointsarray, L2key, letter, L1clusterresult, L2clusterresult):
     """
     Select points in the original pointsarray from level 2 real-space cluster labels
