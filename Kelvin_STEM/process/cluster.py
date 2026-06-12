@@ -729,10 +729,10 @@ def threecol_im_from_letters(
         stack[:, :, :, n] *= col[np.newaxis, np.newaxis, :]
     threecol_im = stack.max(axis=3)
 
-    if returnstackmaxL:
+    if returnstackmax:
         return threecol_im, stackmax.max()
     else:
-        return (threecol_im,)
+        return threecol_im
 
 
 # L3 clustering - remaking diffraction patterns from the data in L2 clusters - especially for ACOM
