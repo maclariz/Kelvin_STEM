@@ -41,6 +41,7 @@ def make_radial_histogram(pointsarray, firstrow, lastrow, s1=0, s2=None, histbin
     )
     Iradial = Iradialcalib[0][s1:s2]
     r = Iradialcalib[1][s1:s2] + 0.5
+
     return (r, Iradial)
 
 
@@ -64,6 +65,7 @@ def sinfunc(phi, a, phi1, r0):
     -------
     a sin(phi+phi1) + r0: float
     """
+
     return a * np.sin(np.radians(phi + phi1)) + r0
 
 
@@ -128,6 +130,7 @@ def setradialrange(pointsarray, Qr1, Qr2, s=0.1, alpha=0.1):
     pointsarrayring = pointsarray[
         np.logical_and(pointsarray.T[5] < Qr2, pointsarray.T[5] > Qr1)
     ]
+
     return pointsarrayring
 
 
@@ -254,6 +257,7 @@ def flip_vertical_flip_points_array(pointsarray):
     """
     pointsarray[:, 0] = -pointsarray[:, 0]
     pointsarray[:, 6] = -pointsarray[:, 6]
+
     return pointsarray
 
 
@@ -278,9 +282,13 @@ def rotate_points_array(pointsarray, angle):
 
     pointsarray[:, 6] += angle
     pointsarray[:, 6] = np.where(
-        pointsarray[:, 6] > 180, pointsarray[:, 6] - 360, pointsarray[:, 6]
+        pointsarray[:, 6] >= 180, pointsarray[:, 6] - 360, pointsarray[:, 6]
+    )
+    pointsarray[:, 6] = np.where(
+        pointsarray[:, 6] < -180, pointsarray[:, 6] + 360, pointsarray[:, 6]
     )
     angrad = np.radians(pointsarray[:, 6])
     pointsarray[:, 0] = -pointsarray[:, 5] * np.sin(angrad)
     pointsarray[:, 1] = pointsarray[:, 5] * np.cos(angrad)
+
     return pointsarray
