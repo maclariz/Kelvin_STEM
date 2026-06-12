@@ -483,7 +483,7 @@ def show_L2_clusters_in_real_space(
     w = 10
     row = int(np.ceil(l / col))
     fig = plt.figure(figsize=(w, w * row / col / ar))
-    gs = GridSpec.GridSpec(row, col)
+    gs = GridSpec.GridSpec(row, col, hspace=0.01)
 
     ims = np.empty(shape=(*shape, l))
     for n, letter in enumerate(letters):
@@ -540,11 +540,59 @@ def phimean_min_L2_cluster(
     return phimeans.min()
 
 
-def make_lettercolkey_from_phimean_min(
-    pointsarray, L1clusterresult, L2clusterresult, L2key, saturation
+def phimean_brightest_L2_cluster(
+    letter, L2key, pointsarray, L1clusterresult, L2clusterresult
 ):
     """
-    makes a dictionary that converts a letter to a colour, based on the lowest angle phi in that L2 cluster
+    Finds the mean phi value for the brightest of the L1 clusters including in an L2 cluster
+    (i.e. the diffraction spot with the maximum summed intensity for an L1 cluster in this L2 cluster).
+    Angle, as ever, measured ACW from horizontal right.
+
+    Parameters
+    ----------
+    letter: str
+        A letter in the list from letters() denoting one cluster in the L2 cluster result
+    L2key: dict
+        A dictionary relating letters to numbers which are the labels of the L2clusterresult
+    pointsarray: np.ndarray
+        The original array of diffraction peaks that was run through L1 clustering
+    L1clusterresult: complex object
+        The output of L1 clustering, either 4D (Qx,Qy,Rx,Ry) or 2D (Qx,Qy) on the pointsarray
+    L2clusterresult: complex object
+        The output of L2 clustering on COMs of each L1 result, calculated in (Rx,Ry)
+
+    Returns
+    -------
+    phimeans.min(): float
+        The lowest mean phi value
+    """
+    # Gets the labels for L1
+    uniquelabels = np.unique(L1clusterresult.labels_)
+    # Chooses the L1 labels corresponding to the L2 cluster given by letter
+    labels = uniquelabels[1:][L2clusterresult.labels_ == L2key[letter]]
+    # Creates empty array for intensities for each L1 cluster
+    intensity = np.empty(shape=labels.shape)
+    # Adds up the intensity in each L1 cluster
+    for n, label in enumerate(labels):
+        points = pointsarray[L1clusterresult.labels_ == label]
+        intensity[n] = points.T[2].sum()
+    # Finds the brightest L1 cluster in the L2 cluster
+    maxint_index = np.argmax(intensity)
+    # Gets the right label for it
+    chosenlabel = labels[maxint_index]
+    # Calculates phimean for this chosen cluster
+    phimean = pointsarray[L1clusterresult.labels_ == chosenlabel].T[6].mean()
+    # Corrects the angle into the positive 0-180 degree range
+    phimean = np.where(phimean < 0, phimean + 180, phimean)
+
+    return phimean
+
+
+def make_lettercolkey_from_L2_cluster(
+    pointsarray, L1clusterresult, L2clusterresult, L2key, saturation=1, method="phimin"
+):
+    """
+    makes a dictionary that converts a letter to a colour, using either of two methods
 
     Parameters
     ----------
@@ -558,17 +606,26 @@ def make_lettercolkey_from_phimean_min(
         A dictionary relating letters to numbers which are the labels of the L2clusterresult
     saturation: float
         A value from 0-1 for the saturation of colour in the HSV model
-
+    method: str
+        A str in ['phimin', 'maxint']
     Returns
     -------
     lettercolkey: dict
         Converts letters (str) to colours (as RGB in 0-1 range) as a 3-tuple
     """
+    if method not in ["phimin", "maxint"]:
+        raise TypeError("the input must be either phimin or maxint")
     lettercolkey = {}
     for letter in L2key:
-        phimean = phimean_min_L2_cluster(
-            letter, L2key, pointsarray, L1clusterresult, L2clusterresult
-        )
+        if method == "phimin":
+            phimean = phimean_min_L2_cluster(
+                letter, L2key, pointsarray, L1clusterresult, L2clusterresult
+            )
+        elif method == "maxint":
+            phimean = phimean_brightest_L2_cluster(
+                letter, L2key, pointsarray, L1clusterresult, L2clusterresult
+            )
+
         h = phimean / 180
         col = hsv_to_rgb(h, saturation, 1)
         lettercolkey.update({letter: col})
@@ -618,8 +675,10 @@ def threecol_im_from_letters(
     imshape,
     L2key,
     letterlist,
+    lettercolkey,
     gamma=0.5,
     saturation=0.8,
+    returnstackmax=False,
 ):
     """
     makes a three colour image from a number of L2 clusters, denoted by a list of letters
@@ -645,6 +704,9 @@ def threecol_im_from_letters(
         Defined colours (as 3-tuples of (R,G,B) [in range 0-1]) for each letter in the letterlist
     gamma: float
         A number used for setting the power norm for display (<1 flattens contrast, 1 does nothing)
+    returnstackmax: bool
+        Can return a maximum intensity in the stack (before normalisation), which can be used to scale
+        intensity when combining with another image made from a different cluster selection
 
     Returns
     -------
@@ -654,23 +716,23 @@ def threecol_im_from_letters(
         The maximum intensity in the stack (for normalising against another image, if needed)
     """
     stack = np.zeros(shape=(imshape[0], imshape[1], 3, len(letterlist)))
-    lettercolkey = make_lettercolkey_from_phimean_min(
-        pointsarray, L1clusterresult, L2clusterresult, L2key, saturation
-    )
     for n, letter in enumerate(letterlist):
         selpoints = letterselectedpoints(
             pointsarray, L2key, letter, L1clusterresult, L2clusterresult
         )
         im = DDFimagefromselectedpoints(selpoints, imshape) ** gamma
         stack[:, :, :, n] = im[:, :, np.newaxis]
-    stackmax = stack.max()
+    stackmax = stack.max(axis=(0, 1, 2))
     stack /= stackmax
     for n, letter in enumerate(letterlist):
         col = np.array(lettercolkey[letter])
         stack[:, :, :, n] *= col[np.newaxis, np.newaxis, :]
     threecol_im = stack.max(axis=3)
 
-    return threecol_im, stackmax
+    if returnstackmaxL:
+        return threecol_im, stackmax.max()
+    else:
+        return (threecol_im,)
 
 
 # L3 clustering - remaking diffraction patterns from the data in L2 clusters - especially for ACOM
