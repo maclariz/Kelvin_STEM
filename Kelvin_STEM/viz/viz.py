@@ -1,4 +1,5 @@
 import matplotlib.patheffects as path_effects
+from matplotlib import colormaps as cmaps
 import numpy as np
 from colorsys import hsv_to_rgb
 
@@ -83,7 +84,9 @@ def add_scalebar(
     )
 
 
-def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5, saturation=0.8):
+def make_HSV_const_wheel_parameters(
+    minangle=0, maxangle=360, innerradius=0.5, saturation=0.8
+):
     """
     gives arrays for plotting into a constant color wheel, however, this needs to be plotted
     into an inset axis with projection='polar' set at declaration
@@ -127,6 +130,55 @@ def make_HSV_const_wheel_parameters(minangle=0, maxangle=360, innerradius=0.5, s
         V.flatten().tolist(),
     )
     c = [hsv_to_rgb(*x) for x in zip(h, s, v)]
+    c = np.array(c)
+
+    return P, S, c
+
+
+def make_colormap_const_wheel_parameters(
+    minangle=0, maxangle=360, innerradius=0.5, cmap=cmaps["viridis"]
+):
+    """
+    gives arrays for plotting into a constant color wheel, however, this needs to be plotted
+    into an inset axis with projection='polar' set at declaration
+    (note different color wheels can be made where color varies with radiusw)
+
+    Parameters
+    ----------
+    minangle: int, float
+        The minimum angle (in degrees) to use in the wheel
+    maxangle: int, float
+        The maximum angle (in degrees) to use in the wheel
+    innerradius: float
+        The inner radius (in range 0-1)
+    cmap: str
+        The colormap you are mapping onto as a function of angle.
+        Must be a proper colormap, not just a colormap name.
+        i.e. cmaps['viridis'] not 'viridis'.  This allows user-generated
+        colormaps to be used.
+
+    Returns
+    -------
+    P: np.ndarray
+        array of phi values (angles for plot)
+    S: np.ndarray
+        array of saturation values (radii for plot)
+    c: np.ndarray
+        array of c values (color tuples)
+    """
+    assert 0 <= innerradius < 1, "set min radius between 0 and 1"
+
+    # Set up the angle ranges
+    phi = np.linspace(np.radians(minangle), np.radians(maxangle), 300)
+    sat = np.linspace(innerradius, 1, 100)
+
+    # Make meshgrids for plotting
+    P, S = np.meshgrid(phi, sat)
+    H = (P - np.radians(minangle)) / (np.radians(maxangle) - np.radians(minangle))
+
+    # Make the colours
+    hues = H.flatten().tolist()
+    c = [cmap(hue) for hue in hues]
     c = np.array(c)
 
     return P, S, c
