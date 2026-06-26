@@ -25,7 +25,7 @@ def mean_std(dataarray, weights=None):
     mean: float
     std: float
     """
-    if weights != None:
+    if isinstance (weights, np.ndarray):
         assert (
             weights.shape == dataarray.shape
         ), "weights must be the same shape as the data"
