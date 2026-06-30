@@ -279,12 +279,12 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
 
         points = pointsarray[L1cluster_result.labels_ == clusterlabel]
 
-        axs[0].scatter(points.T[1], points.T[0], label=n, s=0.1, alpha=0.2, color=c)
+        axs[0].scatter(points.T[1], points.T[0], s=0.1, alpha=0.2, color=c)
         maxint = np.argmax(points.T[2])
         r, ang = points[maxint][5] + 8, np.radians(points[maxint][6])
         labx, laby = np.sin(ang) * r, np.cos(ang) * r
         axs[0].annotate(
-            n,
+            clusterlabel,
             (points[maxint, 1], points[maxint, 0]),
             (laby, -labx),
             horizontalalignment="center",
