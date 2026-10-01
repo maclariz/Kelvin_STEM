@@ -112,11 +112,11 @@ def COM_cluster_Q(
         weights = np.ones(shape=clusterpoints.shape[0])
     if returnint:
         COM = np.append(
-            (clusterpoints.T[2] * clusterpoints.T[:2]).sum(axis=1) / weights.sum(),
+            (weights * clusterpoints.T[:2]).sum(axis=1) / weights.sum(),
             intensity,
         )
     else:
-        COM = (clusterpoints.T[2] * clusterpoints.T[:2]).sum(axis=1) / weights.sum()
+        COM = (weights * clusterpoints.T[:2]).sum(axis=1) / weights.sum()
     return COM
 
 
@@ -255,13 +255,13 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
     Rx_1, Rx_2 = int(pointsarray.T[3].min()), int(pointsarray.T[3].max())
     Ry_1, Ry_2 = int(pointsarray.T[4].min()), int(pointsarray.T[4].max())
 
-    axs[0].set_title("DBscan, Qx, Qy, Rx, Ry")
-    axs[0].set_xlabel("Qx (pix)", fontsize=24)
-    axs[0].set_ylabel("Qy (pix)", fontsize=24)
+    axs[0].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=32)
+    axs[0].set_xlabel("Qy (pix)", fontsize=24)
+    axs[0].set_ylabel("Qx (pix)", fontsize=24)
     axs[0].set_ylim(QRmax, -QRmax)
     axs[0].set_xlim(-QRmax, QRmax)
 
-    axs[1].set_title("DBscan, Qx, Qy, Rx, Ry")
+    axs[1].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=32)
     axs[1].set_xlabel("Ry (pix)", fontsize=24)
     axs[1].set_ylabel("Rx (pix)", fontsize=24)
     axs[1].set_ylim(Rx_2, Rx_1)
@@ -302,7 +302,7 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
 
 
 def show_L1_clusters_in_real_space(
-    pointsarray, L1cluster_result, cluster_list=None, col=3, gamma=0.25, returnfig=False
+    pointsarray, L1cluster_result, cluster_list=None, col=3, gamma=0.25, returnfig=False, cmap='inferno'
 ):
     """
     Function to show real space plots of L1 clustering outputs
@@ -321,6 +321,8 @@ def show_L1_clusters_in_real_space(
         number of columns to be used
     returnfig: bool
         Tells whether to give a return.  If false, only displays a plot.
+    cmap: str
+        A colormap name
     Returns
     -------
     figure: matplotlib figure
@@ -343,7 +345,7 @@ def show_L1_clusters_in_real_space(
         ax.set_axis_off()
         selpoints = pointsarray[L1cluster_result.labels_ == cluster_label]
         im = DDFimagefromselectedpoints(selpoints, shape)
-        ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap="inferno")
+        ax.imshow(im, norm=colors.PowerNorm(gamma=gamma), cmap=cmap)
         ax.text(
             5,
             5,
@@ -571,7 +573,7 @@ def phimean_brightest_L2_cluster(
     # Chooses the L1 labels corresponding to the L2 cluster given by letter
     labels = uniquelabels[1:][L2clusterresult.labels_ == L2key[letter]]
     # Creates empty array for intensities for each L1 cluster
-    intensity = np.empty(shape=labels.shape)
+    intensity = np.empty(shape=labels.shape).astype(float)
     # Adds up the intensity in each L1 cluster
     for n, label in enumerate(labels):
         points = pointsarray[L1clusterresult.labels_ == label]
