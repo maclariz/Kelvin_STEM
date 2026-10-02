@@ -255,13 +255,13 @@ def plot_L1_4D_clusters(L1cluster_result, pointsarray, QRmax, returnfig=False):
     Rx_1, Rx_2 = int(pointsarray.T[3].min()), int(pointsarray.T[3].max())
     Ry_1, Ry_2 = int(pointsarray.T[4].min()), int(pointsarray.T[4].max())
 
-    axs[0].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=32)
+    axs[0].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=24)
     axs[0].set_xlabel("Qy (pix)", fontsize=24)
     axs[0].set_ylabel("Qx (pix)", fontsize=24)
     axs[0].set_ylim(QRmax, -QRmax)
     axs[0].set_xlim(-QRmax, QRmax)
 
-    axs[1].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=32)
+    axs[1].set_title("DBscan, Qx, Qy, Rx, Ry", fontsize=24)
     axs[1].set_xlabel("Ry (pix)", fontsize=24)
     axs[1].set_ylabel("Rx (pix)", fontsize=24)
     axs[1].set_ylim(Rx_2, Rx_1)
